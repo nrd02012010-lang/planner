@@ -2,48 +2,94 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planner App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .task-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .task-card:active { scale: 0.98; }
     </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-4">
-    <div class="max-w-md mx-auto">
-        <header class="text-center py-6">
-            <h1 class="text-3xl font-bold text-blue-400">Smart Planner</h1>
-            <p class="text-slate-400 text-sm">Твой личный дневник задач</p>
+<body class="text-slate-200 min-h-screen pb-10">
+
+    <div class="max-w-md mx-auto px-5">
+        <header class="py-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Planner Pro</h1>
+                <p class="text-slate-400 text-xs tracking-widest uppercase mt-1">Твоя личная продуктивность</p>
+            </div>
+            <div class="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                <span id="counter" class="text-blue-400 font-bold">0</span>
+            </div>
         </header>
 
-        <div class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
-            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">Дата и время</label>
-            <input type="datetime-local" id="dt" class="w-full bg-slate-700 p-3 rounded-xl mb-4 border-none focus:ring-2 focus:ring-blue-500 outline-none">
-            
-            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">Что нужно сделать?</label>
-            <input type="text" id="task" placeholder="Например: Сдать зачет..." class="w-full bg-slate-700 p-3 rounded-xl mb-6 border-none focus:ring-2 focus:ring-blue-500 outline-none">
-            
-            <button onclick="add()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20">
-                Добавить в список
-            </button>
+        <div class="glass rounded-[2rem] p-6 mb-8 shadow-2xl">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-2">Название задачи</label>
+                    <input type="text" id="task" placeholder="Купить продукты..." 
+                        class="w-full bg-white/5 p-4 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none mt-1 transition-all">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-2">Когда</label>
+                        <input type="datetime-local" id="dt" 
+                            class="w-full bg-white/5 p-4 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none mt-1 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-2">Приоритет</label>
+                        <select id="priority" class="w-full bg-white/5 p-4 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none mt-1 text-sm appearance-none">
+                            <option value="blue" class="text-black">Обычный</option>
+                            <option value="purple" class="text-black">Важный</option>
+                            <option value="red" class="text-black">Срочный</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="add()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95 mt-2">
+                    Создать план
+                </button>
+            </div>
         </div>
 
-        <div id="list" class="mt-8 space-y-3">
-            <!-- Здесь появятся задачи -->
-        </div>
+        <div id="list" class="space-y-4">
+            </div>
     </div>
 
     <script>
         function render() {
             const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
             const list = document.getElementById('list');
+            document.getElementById('counter').innerText = tasks.length;
+
+            if (tasks.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-slate-500 text-sm italic">Список пуст... Добавьте что-нибудь!</div>`;
+                return;
+            }
+
             list.innerHTML = tasks.map((t, i) => `
-                <div class="bg-slate-800 p-4 rounded-2xl border-l-4 border-blue-500 flex justify-between items-center shadow-md">
-                    <div>
-                        <div class="text-[10px] text-blue-400 font-bold uppercase">${t.date}</div>
-                        <div class="text-slate-200 font-medium">${t.text}</div>
+                <div class="task-card glass p-5 rounded-3xl border-l-[6px] border-${t.color}-500 flex justify-between items-center shadow-lg animate-in slide-in-from-bottom-2 duration-300">
+                    <div class="pr-4">
+                        <div class="text-[10px] text-${t.color}-400 font-black uppercase tracking-wider mb-1">${t.date}</div>
+                        <div class="text-slate-100 font-semibold leading-tight">${t.text}</div>
                     </div>
-                    <button onclick="del(${i})" class="text-slate-500 hover:text-red-400 p-2">✕</button>
+                    <button onclick="del(${i})" class="bg-white/5 hover:bg-red-500/20 h-10 w-10 rounded-xl flex items-center justify-center transition-colors">
+                        <span class="text-slate-400">✕</span>
+                    </button>
                 </div>
             `).join('');
         }
@@ -51,13 +97,21 @@
         function add() {
             const dateInput = document.getElementById('dt').value;
             const textInput = document.getElementById('task').value;
-            if(!dateInput || !textInput) return alert('Заполни все поля!');
+            const color = document.getElementById('priority').value;
+
+            if(!dateInput || !textInput) return;
             
             const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-            tasks.unshift({
-                date: dateInput.replace('T', ' | '),
-                text: textInput
+            const formattedDate = new Date(dateInput).toLocaleString('ru-RU', {
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
             });
+
+            tasks.unshift({
+                date: formattedDate,
+                text: textInput,
+                color: color
+            });
+
             localStorage.setItem('tasks', JSON.stringify(tasks));
             document.getElementById('task').value = "";
             render();

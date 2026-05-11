@@ -3,96 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Planner 2026</title>
+    <title>Ultimate Planner Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow: hidden; }
         .hour-row { height: 60px; border-bottom: 1px solid #f1f5f9; position: relative; }
-        .time-col { width: 60px; border-right: 1px solid #e2e8f0; }
+        .time-col { width: 60px; border-right: 1px solid #e2e8f0; background: #fcfdfe; }
         .drawer { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(100%); }
         .drawer.active { transform: translateY(0); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-        .day-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; cursor: pointer; }
-        .day-cell.selected { background: #2563eb; color: white; font-weight: bold; }
-        .day-cell.today { border: 2px solid #2563eb; }
-        .task-chip { position: absolute; left: 6px; right: 6px; border-radius: 12px; padding: 6px 10px; font-size: 11px; font-weight: 600; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
-        #scroll-area { height: calc(100vh - 80px); overflow-y: auto; scroll-behavior: smooth; }
+        .day-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .day-cell.selected { background: #2563eb; color: white; font-weight: bold; transform: scale(1.1); }
+        .day-cell:active { background: #dbeafe; }
+        .task-chip { position: absolute; left: 6px; right: 6px; border-radius: 14px; padding: 8px 12px; font-size: 11px; font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
+        #scroll-area { height: calc(100vh - 80px); overflow-y: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        input[type="date"], input[type="time"] { -webkit-appearance: none; min-height: 50px; }
     </style>
 </head>
 <body class="text-slate-800">
 
-    <header class="h-20 bg-white border-b flex items-center justify-between px-6 sticky top-0 z-20" onclick="toggleDrawer('dateDrawer', true)">
+    <header class="h-20 bg-white border-b flex items-center justify-between px-6 sticky top-0 z-20 shadow-sm" onclick="toggleDrawer('dateDrawer', true)">
         <div>
-            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Выбранная дата</p>
-            <h1 id="displayDate" class="text-xl font-bold flex items-center">
-                Загрузка... <span class="ml-2 text-slate-300 text-xs">▼</span>
+            <p class="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em]">Просмотр дня</p>
+            <h1 id="displayDate" class="text-lg font-bold flex items-center gap-2 text-slate-900">
+                Загрузка... <span class="text-slate-300 text-[10px]">▼</span>
             </h1>
         </div>
-        <div class="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center">
-            📅
-        </div>
+        <div class="h-11 w-11 bg-blue-50 rounded-2xl flex items-center justify-center text-xl shadow-inner">📅</div>
     </header>
 
-    <main id="scroll-area" class="bg-white">
+    <main id="scroll-area">
         <div class="flex">
-            <div class="time-col bg-slate-50/50" id="timeLabels"></div>
+            <div class="time-col" id="timeLabels"></div>
             <div class="flex-grow relative" id="gridContent">
                 <div id="tasksOverlay" class="absolute inset-0 pointer-events-none"></div>
             </div>
         </div>
     </main>
 
-    <button onclick="toggleDrawer('addDrawer', true)" class="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 rounded-full text-white text-4xl shadow-2xl shadow-blue-500/40 flex items-center justify-center active:scale-90 transition-transform z-30">
-        +
+    <button onclick="toggleDrawer('addDrawer', true)" class="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 rounded-3xl text-white text-4xl shadow-2xl shadow-blue-500/40 flex items-center justify-center active:scale-90 transition-all z-30">
+        <span class="mb-1">+</span>
     </button>
 
-    <div id="dateOverlay" class="fixed inset-0 bg-black/40 hidden z-40" onclick="toggleDrawer('dateDrawer', false)"></div>
+    <div id="dateOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-40" onclick="toggleDrawer('dateDrawer', false)"></div>
     <div id="dateDrawer" class="drawer fixed bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-8 z-50 shadow-2xl">
         <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
-        
-        <div class="flex justify-between items-center mb-6">
-            <button onclick="changeMonth(-1)" class="p-2 text-xl">◀</button>
-            <h2 id="calendarMonth" class="text-xl font-bold italic">Май 2026</h2>
-            <button onclick="changeMonth(1)" class="p-2 text-xl">▶</button>
+        <div class="flex justify-between items-center mb-6 px-2">
+            <button onclick="changeMonth(-1)" class="w-10 h-10 bg-slate-50 rounded-full">◀</button>
+            <h2 id="calendarMonth" class="text-lg font-bold text-slate-700 uppercase tracking-tight">Март 2026</h2>
+            <button onclick="changeMonth(1)" class="w-10 h-10 bg-slate-50 rounded-full">▶</button>
         </div>
-
-        <div class="calendar-grid mb-4">
-            <div class="text-center text-[10px] font-bold text-slate-400">ПН</div>
-            <div class="text-center text-[10px] font-bold text-slate-400">ВТ</div>
-            <div class="text-center text-[10px] font-bold text-slate-400">СР</div>
-            <div class="text-center text-[10px] font-bold text-slate-400">ЧТ</div>
-            <div class="text-center text-[10px] font-bold text-slate-400">ПТ</div>
-            <div class="text-center text-[10px] font-bold text-red-400">СБ</div>
-            <div class="text-center text-[10px] font-bold text-red-400">ВС</div>
+        <div class="calendar-grid mb-2 text-[10px] font-black text-slate-400 text-center uppercase tracking-widest">
+            <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div class="text-red-400">Сб</div><div class="text-red-400">Вс</div>
         </div>
         <div id="calendarDays" class="calendar-grid"></div>
-        <button onclick="toggleDrawer('dateDrawer', false)" class="w-full mt-8 py-4 bg-slate-100 rounded-2xl font-bold text-slate-600">Закрыть</button>
+        <button onclick="toggleDrawer('dateDrawer', false)" class="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-bold">Показать этот день</button>
     </div>
 
-    <div id="addOverlay" class="fixed inset-0 bg-black/40 hidden z-40" onclick="toggleDrawer('addDrawer', false)"></div>
+    <div id="addOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-40" onclick="toggleDrawer('addDrawer', false)"></div>
     <div id="addDrawer" class="drawer fixed bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-8 z-50 shadow-2xl">
         <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
-        <h2 class="text-2xl font-bold mb-6 text-center text-slate-800">Новая запись</h2>
-        <div class="space-y-4">
-            <input type="text" id="taskName" placeholder="Что планируем?" class="w-full bg-slate-100 p-5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 text-lg">
-            <div class="flex gap-4">
-                <input type="time" id="taskTime" class="flex-grow bg-slate-100 p-5 rounded-2xl border-none font-bold">
-                <select id="taskColor" class="bg-slate-100 p-5 rounded-2xl border-none outline-none">
-                    <option value="blue">🔵 Синий</option>
-                    <option value="orange">🟠 Срочно</option>
-                    <option value="purple">🟣 Важно</option>
-                </select>
+        <h2 class="text-xl font-black mb-6 text-slate-800">Новая запись</h2>
+        <div class="space-y-5">
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Название</label>
+                <input type="text" id="taskName" placeholder="Что нужно сделать?" class="w-full bg-slate-100 p-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-medium">
             </div>
-            <button onclick="addTask()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">СОХРАНИТЬ</button>
+            
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Дата записи</label>
+                <input type="date" id="taskDate" class="w-full bg-slate-100 p-4 rounded-2xl border-none outline-none font-bold">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Время</label>
+                    <input type="time" id="taskTime" class="w-full bg-slate-100 p-4 rounded-2xl border-none outline-none font-bold">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Цвет</label>
+                    <select id="taskColor" class="w-full bg-slate-100 p-4 rounded-2xl border-none outline-none font-bold h-[58px]">
+                        <option value="blue">🔵 Синий</option>
+                        <option value="orange">🟠 Срочно</option>
+                        <option value="purple">🟣 Важно</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="addTask()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-500/30 active:scale-95 transition-all mt-4">СОХРАНИТЬ</button>
         </div>
     </div>
 
     <script>
-        let viewDate = new Date(); // Дата, которую мы смотрим в календаре
-        let selectedDate = new Date(); // Дата, которая выбрана для сетки
+        let viewDate = new Date(); 
+        let selectedDate = new Date(); 
 
-        // 1. Инициализация сетки времени (00-23)
+        // Инициализация времени 00-23
         const timeLabels = document.getElementById('timeLabels');
         const gridContent = document.getElementById('gridContent');
         for(let i=0; i<24; i++) {
@@ -104,6 +110,9 @@
             const drawer = document.getElementById(id);
             const overlay = document.getElementById(id.replace('Drawer', 'Overlay'));
             if(show) {
+                if(id === 'addDrawer') {
+                    document.getElementById('taskDate').value = selectedDate.toISOString().split('T')[0];
+                }
                 overlay.classList.remove('hidden');
                 setTimeout(() => drawer.classList.add('active'), 10);
                 if(id === 'dateDrawer') renderCalendar();
@@ -113,22 +122,16 @@
             }
         }
 
-        // 2. Логика календаря
         function renderCalendar() {
             const grid = document.getElementById('calendarDays');
             const monthLabel = document.getElementById('calendarMonth');
             grid.innerHTML = '';
-            
             const year = viewDate.getFullYear();
             const month = viewDate.getMonth();
             monthLabel.innerText = new Intl.DateTimeFormat('ru-RU', {month: 'long', year: 'numeric'}).format(viewDate);
-
             const firstDay = new Date(year, month, 1).getDay() || 7;
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            // Пустые клетки для начала месяца
             for(let i=1; i<firstDay; i++) grid.innerHTML += '<div></div>';
-
             for(let day=1; day<=daysInMonth; day++) {
                 const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
                 grid.innerHTML += `<div onclick="selectDate(${day})" class="day-cell ${isSelected ? 'selected' : 'hover:bg-slate-100'}">${day}</div>`;
@@ -142,19 +145,20 @@
 
         function selectDate(day) {
             selectedDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-            document.getElementById('displayDate').innerText = selectedDate.toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', year: 'numeric'});
+            updateDisplay();
             toggleDrawer('dateDrawer', false);
             renderTasks();
         }
 
-        // 3. Работа с задачами
+        function updateDisplay() {
+            document.getElementById('displayDate').innerText = selectedDate.toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', year: 'numeric'});
+        }
+
         function renderTasks() {
-            const tasks = JSON.parse(localStorage.getItem('infinite_planner') || '[]');
+            const tasks = JSON.parse(localStorage.getItem('mega_planner_v2') || '[]');
             const overlay = document.getElementById('tasksOverlay');
             overlay.innerHTML = '';
-
             const dateKey = selectedDate.toISOString().split('T')[0];
-            
             tasks.filter(t => t.date === dateKey).forEach((t, i) => {
                 const [h, m] = t.time.split(':');
                 const top = parseInt(h) * 60 + parseInt(m);
@@ -163,7 +167,7 @@
                 chip.style.top = top + 'px';
                 chip.innerHTML = `<div class="flex justify-between items-center truncate">
                     <span>${t.time} • ${t.name}</span>
-                    <span onclick="event.stopPropagation(); delTask('${t.id}')" class="ml-2 font-bold opacity-60">✕</span>
+                    <button onclick="event.stopPropagation(); delTask('${t.id}')" class="ml-2 font-bold opacity-60 px-2">✕</button>
                 </div>`;
                 overlay.appendChild(chip);
             });
@@ -172,13 +176,16 @@
         function addTask() {
             const name = document.getElementById('taskName').value;
             const time = document.getElementById('taskTime').value;
-            if(!name || !time) return;
+            const date = document.getElementById('taskDate').value;
+            if(!name || !time || !date) return;
 
-            const tasks = JSON.parse(localStorage.getItem('infinite_planner') || '[]');
-            const dateKey = selectedDate.toISOString().split('T')[0];
+            const tasks = JSON.parse(localStorage.getItem('mega_planner_v2') || '[]');
+            tasks.push({ id: Date.now().toString(), name, time, date, color: document.getElementById('taskColor').value });
+            localStorage.setItem('mega_planner_v2', JSON.stringify(tasks));
             
-            tasks.push({ id: Date.now().toString(), name, time, date: dateKey, color: document.getElementById('taskColor').value });
-            localStorage.setItem('infinite_planner', JSON.stringify(tasks));
+            selectedDate = new Date(date);
+            viewDate = new Date(date); // Чтобы календарь тоже синхронизировался
+            updateDisplay();
             
             document.getElementById('taskName').value = '';
             toggleDrawer('addDrawer', false);
@@ -186,14 +193,14 @@
         }
 
         function delTask(id) {
-            let tasks = JSON.parse(localStorage.getItem('infinite_planner') || '[]');
+            let tasks = JSON.parse(localStorage.getItem('mega_planner_v2') || '[]');
             tasks = tasks.filter(t => t.id !== id);
-            localStorage.setItem('infinite_planner', JSON.stringify(tasks));
+            localStorage.setItem('mega_planner_v2', JSON.stringify(tasks));
             renderTasks();
         }
 
-        // Старт
-        selectDate(new Date().getDate());
+        updateDisplay();
+        renderTasks();
     </script>
     <div class="hidden bg-blue-500 bg-orange-500 bg-purple-500"></div>
 </body>

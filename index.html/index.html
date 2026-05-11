@@ -3,135 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Planner</title>
+    <title>Ultimate Planner 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; overflow: hidden; }
-        .time-column { width: 50px; border-right: 1px solid #e2e8f0; }
-        .hour-row { height: 50px; border-bottom: 1px solid #f1f5f9; position: relative; }
-        .modal { transition: transform 0.3s ease-out; transform: translateY(100%); }
-        .modal.active { transform: translateY(0); }
-        .task-chip { position: absolute; left: 4px; right: 4px; border-radius: 6px; padding: 2px 6px; font-size: 10px; font-weight: 600; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .day-btn.active { background: #2563eb; color: white; transform: scale(1.05); }
-        #scroll-area { height: calc(100vh - 160px); overflow-y: auto; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow: hidden; }
+        .hour-row { height: 60px; border-bottom: 1px solid #f1f5f9; position: relative; }
+        .time-col { width: 60px; border-right: 1px solid #e2e8f0; }
+        .drawer { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(100%); }
+        .drawer.active { transform: translateY(0); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .day-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; cursor: pointer; }
+        .day-cell.selected { background: #2563eb; color: white; font-weight: bold; }
+        .day-cell.today { border: 2px solid #2563eb; }
+        .task-chip { position: absolute; left: 6px; right: 6px; border-radius: 12px; padding: 6px 10px; font-size: 11px; font-weight: 600; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        #scroll-area { height: calc(100vh - 80px); overflow-y: auto; scroll-behavior: smooth; }
     </style>
 </head>
 <body class="text-slate-800">
 
-    <header class="bg-white shadow-sm z-10">
-        <div class="p-4 flex justify-between items-center border-b">
-            <h1 class="text-xl font-bold">Мой Календарь</h1>
-            <div id="currentMonth" class="text-sm font-bold text-slate-500 uppercase tracking-wider">Май</div>
+    <header class="h-20 bg-white border-b flex items-center justify-between px-6 sticky top-0 z-20" onclick="toggleDrawer('dateDrawer', true)">
+        <div>
+            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Выбранная дата</p>
+            <h1 id="displayDate" class="text-xl font-bold flex items-center">
+                Загрузка... <span class="ml-2 text-slate-300 text-xs">▼</span>
+            </h1>
         </div>
-        <div id="days-row" class="flex gap-3 p-4 overflow-x-auto no-scrollbar bg-white">
-            </div>
+        <div class="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center">
+            📅
+        </div>
     </header>
 
-    <main id="scroll-area" class="bg-white m-2 rounded-2xl shadow-sm border border-slate-200">
+    <main id="scroll-area" class="bg-white">
         <div class="flex">
-            <div class="time-column bg-slate-50 flex flex-col" id="time-labels">
-                </div>
-            <div class="flex-grow relative" id="grid-content">
-                <div id="tasks-overlay" class="absolute inset-0 pointer-events-none"></div>
-                </div>
+            <div class="time-col bg-slate-50/50" id="timeLabels"></div>
+            <div class="flex-grow relative" id="gridContent">
+                <div id="tasksOverlay" class="absolute inset-0 pointer-events-none"></div>
+            </div>
         </div>
     </main>
 
-    <button onclick="toggleModal(true)" class="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full text-white text-3xl shadow-xl flex items-center justify-center active:scale-90 transition-transform z-20">
+    <button onclick="toggleDrawer('addDrawer', true)" class="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 rounded-full text-white text-4xl shadow-2xl shadow-blue-500/40 flex items-center justify-center active:scale-90 transition-transform z-30">
         +
     </button>
 
-    <div id="modalOverlay" class="fixed inset-0 bg-black/50 hidden z-30" onclick="toggleModal(false)"></div>
-    <div id="modal" class="modal fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-6 z-40">
-        <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
-        <h2 class="text-lg font-bold mb-4 text-center">Добавить задачу</h2>
+    <div id="dateOverlay" class="fixed inset-0 bg-black/40 hidden z-40" onclick="toggleDrawer('dateDrawer', false)"></div>
+    <div id="dateDrawer" class="drawer fixed bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-8 z-50 shadow-2xl">
+        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
         
-        <div class="space-y-3">
-            <input type="text" id="taskName" placeholder="Что сделать?" class="w-full bg-slate-100 p-3 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500">
-            
-            <div class="grid grid-cols-2 gap-2">
-                <input type="date" id="taskDate" class="bg-slate-100 p-3 rounded-xl border-none text-xs">
-                <input type="time" id="taskTime" class="bg-slate-100 p-3 rounded-xl border-none text-xs">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="changeMonth(-1)" class="p-2 text-xl">◀</button>
+            <h2 id="calendarMonth" class="text-xl font-bold italic">Май 2026</h2>
+            <button onclick="changeMonth(1)" class="p-2 text-xl">▶</button>
+        </div>
+
+        <div class="calendar-grid mb-4">
+            <div class="text-center text-[10px] font-bold text-slate-400">ПН</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">ВТ</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">СР</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">ЧТ</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">ПТ</div>
+            <div class="text-center text-[10px] font-bold text-red-400">СБ</div>
+            <div class="text-center text-[10px] font-bold text-red-400">ВС</div>
+        </div>
+        <div id="calendarDays" class="calendar-grid"></div>
+        <button onclick="toggleDrawer('dateDrawer', false)" class="w-full mt-8 py-4 bg-slate-100 rounded-2xl font-bold text-slate-600">Закрыть</button>
+    </div>
+
+    <div id="addOverlay" class="fixed inset-0 bg-black/40 hidden z-40" onclick="toggleDrawer('addDrawer', false)"></div>
+    <div id="addDrawer" class="drawer fixed bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-8 z-50 shadow-2xl">
+        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
+        <h2 class="text-2xl font-bold mb-6 text-center text-slate-800">Новая запись</h2>
+        <div class="space-y-4">
+            <input type="text" id="taskName" placeholder="Что планируем?" class="w-full bg-slate-100 p-5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 text-lg">
+            <div class="flex gap-4">
+                <input type="time" id="taskTime" class="flex-grow bg-slate-100 p-5 rounded-2xl border-none font-bold">
+                <select id="taskColor" class="bg-slate-100 p-5 rounded-2xl border-none outline-none">
+                    <option value="blue">🔵 Синий</option>
+                    <option value="orange">🟠 Срочно</option>
+                    <option value="purple">🟣 Важно</option>
+                </select>
             </div>
-
-            <select id="taskColor" class="w-full bg-slate-100 p-3 rounded-xl border-none">
-                <option value="blue">🔵 Обычное</option>
-                <option value="red">🔴 Срочное</option>
-                <option value="purple">🟣 Важное</option>
-            </select>
-
-            <button onclick="addTask()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mt-2">Сохранить</button>
+            <button onclick="addTask()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">СОХРАНИТЬ</button>
         </div>
     </div>
 
     <script>
-        let selectedDate = new Date().toISOString().split('T')[0];
+        let viewDate = new Date(); // Дата, которую мы смотрим в календаре
+        let selectedDate = new Date(); // Дата, которая выбрана для сетки
 
-        // Инициализация сетки времени
-        const timeLabels = document.getElementById('time-labels');
-        const gridContent = document.getElementById('grid-content');
+        // 1. Инициализация сетки времени (00-23)
+        const timeLabels = document.getElementById('timeLabels');
+        const gridContent = document.getElementById('gridContent');
         for(let i=0; i<24; i++) {
-            timeLabels.innerHTML += `<div class="hour-row flex items-center justify-center text-[9px] text-slate-400 font-bold">${String(i).padStart(2, '0')}:00</div>`;
-            gridContent.innerHTML += `<div class="hour-row border-b border-slate-50"></div>`;
+            timeLabels.innerHTML += `<div class="hour-row flex items-center justify-center text-[10px] text-slate-400 font-bold">${String(i).padStart(2, '0')}:00</div>`;
+            gridContent.innerHTML += `<div class="hour-row"></div>`;
         }
 
-        // Генерация дней (ближайшие 14 дней)
-        function initDays() {
-            const row = document.getElementById('days-row');
-            row.innerHTML = '';
-            for(let i=0; i<14; i++) {
-                let d = new Date();
-                d.setDate(d.getDate() + i);
-                let dateStr = d.toISOString().split('T')[0];
-                let activeClass = dateStr === selectedDate ? 'active' : 'bg-slate-100';
-                
-                row.innerHTML += `
-                    <div onclick="selectDay('${dateStr}')" class="day-btn ${activeClass} min-w-[50px] p-3 rounded-2xl flex flex-col items-center transition-all cursor-pointer">
-                        <span class="text-[10px] uppercase font-bold opacity-60">${d.toLocaleDateString('ru-RU', {weekday: 'short'})}</span>
-                        <span class="text-sm font-bold">${d.getDate()}</span>
-                    </div>
-                `;
-            }
-            document.getElementById('currentMonth').innerText = new Date(selectedDate).toLocaleDateString('ru-RU', {month: 'long'});
-        }
-
-        function selectDay(date) {
-            selectedDate = date;
-            initDays();
-            renderTasks();
-        }
-
-        function toggleModal(show) {
-            const modal = document.getElementById('modal');
-            const overlay = document.getElementById('modalOverlay');
+        function toggleDrawer(id, show) {
+            const drawer = document.getElementById(id);
+            const overlay = document.getElementById(id.replace('Drawer', 'Overlay'));
             if(show) {
-                document.getElementById('taskDate').value = selectedDate;
                 overlay.classList.remove('hidden');
-                setTimeout(() => modal.classList.add('active'), 10);
+                setTimeout(() => drawer.classList.add('active'), 10);
+                if(id === 'dateDrawer') renderCalendar();
             } else {
-                modal.classList.remove('active');
+                drawer.classList.remove('active');
                 setTimeout(() => overlay.classList.add('hidden'), 300);
             }
         }
 
+        // 2. Логика календаря
+        function renderCalendar() {
+            const grid = document.getElementById('calendarDays');
+            const monthLabel = document.getElementById('calendarMonth');
+            grid.innerHTML = '';
+            
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            monthLabel.innerText = new Intl.DateTimeFormat('ru-RU', {month: 'long', year: 'numeric'}).format(viewDate);
+
+            const firstDay = new Date(year, month, 1).getDay() || 7;
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Пустые клетки для начала месяца
+            for(let i=1; i<firstDay; i++) grid.innerHTML += '<div></div>';
+
+            for(let day=1; day<=daysInMonth; day++) {
+                const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
+                grid.innerHTML += `<div onclick="selectDate(${day})" class="day-cell ${isSelected ? 'selected' : 'hover:bg-slate-100'}">${day}</div>`;
+            }
+        }
+
+        function changeMonth(diff) {
+            viewDate.setMonth(viewDate.getMonth() + diff);
+            renderCalendar();
+        }
+
+        function selectDate(day) {
+            selectedDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+            document.getElementById('displayDate').innerText = selectedDate.toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', year: 'numeric'});
+            toggleDrawer('dateDrawer', false);
+            renderTasks();
+        }
+
+        // 3. Работа с задачами
         function renderTasks() {
-            const tasks = JSON.parse(localStorage.getItem('mega_planner') || '[]');
-            const overlay = document.getElementById('tasks-overlay');
+            const tasks = JSON.parse(localStorage.getItem('infinite_planner') || '[]');
+            const overlay = document.getElementById('tasksOverlay');
             overlay.innerHTML = '';
 
-            // Фильтруем задачи только для выбранного дня
-            tasks.filter(t => t.date === selectedDate).forEach((t, i) => {
+            const dateKey = selectedDate.toISOString().split('T')[0];
+            
+            tasks.filter(t => t.date === dateKey).forEach((t, i) => {
                 const [h, m] = t.time.split(':');
-                const top = parseInt(h) * 50 + (parseInt(m) * 50 / 60);
-                
+                const top = parseInt(h) * 60 + parseInt(m);
                 const chip = document.createElement('div');
                 chip.className = `task-chip bg-${t.color}-500`;
                 chip.style.top = top + 'px';
-                chip.style.height = '42px';
-                chip.innerHTML = `<div class="flex justify-between items-center">
-                    <span class="truncate">${t.time} ${t.name}</span>
-                    <span onclick="event.stopPropagation(); delTask('${t.id}')" class="ml-1 opacity-70">✕</span>
+                chip.innerHTML = `<div class="flex justify-between items-center truncate">
+                    <span>${t.time} • ${t.name}</span>
+                    <span onclick="event.stopPropagation(); delTask('${t.id}')" class="ml-2 font-bold opacity-60">✕</span>
                 </div>`;
                 overlay.appendChild(chip);
             });
@@ -140,30 +172,29 @@
         function addTask() {
             const name = document.getElementById('taskName').value;
             const time = document.getElementById('taskTime').value;
-            const date = document.getElementById('taskDate').value;
-            const color = document.getElementById('taskColor').value;
+            if(!name || !time) return;
 
-            if(!name || !time || !date) return;
-
-            const tasks = JSON.parse(localStorage.getItem('mega_planner') || '[]');
-            tasks.push({ id: Date.now().toString(), name, time, date, color });
-            localStorage.setItem('mega_planner', JSON.stringify(tasks));
+            const tasks = JSON.parse(localStorage.getItem('infinite_planner') || '[]');
+            const dateKey = selectedDate.toISOString().split('T')[0];
+            
+            tasks.push({ id: Date.now().toString(), name, time, date: dateKey, color: document.getElementById('taskColor').value });
+            localStorage.setItem('infinite_planner', JSON.stringify(tasks));
             
             document.getElementById('taskName').value = '';
-            toggleModal(false);
+            toggleDrawer('addDrawer', false);
             renderTasks();
         }
 
         function delTask(id) {
-            let tasks = JSON.parse(localStorage.getItem('mega_planner') || '[]');
+            let tasks = JSON.parse(localStorage.getItem('infinite_planner') || '[]');
             tasks = tasks.filter(t => t.id !== id);
-            localStorage.setItem('mega_planner', JSON.stringify(tasks));
+            localStorage.setItem('infinite_planner', JSON.stringify(tasks));
             renderTasks();
         }
 
-        initDays();
-        renderTasks();
+        // Старт
+        selectDate(new Date().getDate());
     </script>
-    <div class="hidden bg-blue-500 bg-red-500 bg-purple-500"></div>
+    <div class="hidden bg-blue-500 bg-orange-500 bg-purple-500"></div>
 </body>
 </html>
